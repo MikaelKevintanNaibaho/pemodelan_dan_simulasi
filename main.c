@@ -9,6 +9,7 @@ int num_delays_required;
 int num_events;
 int num_in_q;
 int server_status;
+int data_points_collected = 0;
 
 float area_num_in_q;
 float area_server_status;

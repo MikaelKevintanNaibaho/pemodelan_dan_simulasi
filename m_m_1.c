@@ -1,6 +1,9 @@
 #include "m_m_1.h"
 #include <stdlib.h>
 
+int total_in_systems = 0;
+int L_values[MAX_DATA_POINTS];
+
 void initialize(void){ /* Initialize function. */
 	/* Initialize the simulation clock. */
 	sim_time = 0;
@@ -20,6 +23,13 @@ void initialize(void){ /* Initialize function. */
 	time_next_event[1] = sim_time + expon(mean_interarrival);
 	time_next_event[2] = 1.0e+30;
 
+}
+
+void update_l_values(void){
+	if (data_points_collected < MAX_DATA_POINTS){
+		L_values[data_points_collected] = total_in_systems;
+		data_points_collected++;
+	}
 }
 
 void  timing(void){ /* Timing function. */
@@ -44,6 +54,8 @@ void  timing(void){ /* Timing function. */
 
 	/* The event list is not empty, so advance the simulation clock. */
 	sim_time = min_time_next_event;
+
+	update_l_values();
 }
 
 void arrive(void){ /* Arrival event function. */
@@ -72,6 +84,7 @@ void arrive(void){ /* Arrival event function. */
 		/* Server is idle, so arriving customer has a delay of zero. */
 		delay = 0.0;
 		total_of_delays += delay;
+		total_in_systems ++;
 
 		/* Increment the number of customers delayed, and make server busy. */
 		++num_custs_delayed;
@@ -110,16 +123,37 @@ void depart(void){ /*Departure event function. */
 		for(i = 1; i <= num_in_q; ++i){
 			time_arrival[i] = time_arrival[i + 1];
 		}
+
+		total_in_systems--;
 	}
 }
 
-void report(void){ /*Report generator function */
-	/* Compute and write estimates of desired measures of performance. */
-	fprintf(outfile, "\nAverage delay in queue%11.3f minutes\n\n", total_of_delays / num_custs_delayed);
-	fprintf(outfile, "\nAverge number in queue%10.3f\n\n", area_num_in_q / sim_time);
-	fprintf(outfile, "Server utilization%15.3f\n\n", area_server_status / sim_time);
-	fprintf(outfile, "Time simulation ended%12.3f minutes", sim_time);
+void report(void) { /* Report generator function */
+    // Compute and write estimates of desired measures of performance.
+    fprintf(outfile, "\nAverage delay in queue%11.3f minutes\n\n", total_of_delays / num_custs_delayed);
+    fprintf(outfile, "\nAverage number in queue%10.3f\n\n", area_num_in_q / sim_time);
+    fprintf(outfile, "Server utilization%15.3f\n\n", area_server_status / sim_time);
+    fprintf(outfile, "Time simulation ended%12.3f minutes", sim_time);
+
+    FILE *data_file;
+    data_file = fopen("L_t_data.txt", "w");
+
+	
+    // Close the file
+    fclose(data_file);
+
+    // Compute L̂(T)
+    float sum_L = 0.0;
+    for (int i = 0; i < data_points_collected; i++) {
+        sum_L += L_values[i];
+    }
+    float L_avg = sum_L / (sim_time * data_points_collected); // Average number of customers in the system per unit time
+    float L_T = L_avg * T; // Total average number of customers in the system during the time interval [0, T]
+
+    // Print or use L_T as needed
+    fprintf(outfile, "\nEstimated average number of customers in the system during time interval [0, %d]: %.3f\n\n", T,L_T);
 }
+
 
 void update_time_avg_stats(void){ /* Update area accumulators for time-average statistics. */
 	float time_since_last_event;

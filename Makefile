@@ -58,3 +58,7 @@ cppcheck:
 
 clean:
 	rm -rf build
+
+plot:
+	python3 make_plot.py
+
