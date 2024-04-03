@@ -138,7 +138,11 @@ void report(void) { /* Report generator function */
     FILE *data_file;
     data_file = fopen("L_t_data.txt", "w");
 
-	
+    // Write data points to file
+    for (int i = 0; i < data_points_collected; i++) {
+        fprintf(data_file, "%f %d\n", sim_time + i * sim_time, L_values[i]);
+    }
+
     // Close the file
     fclose(data_file);
 
